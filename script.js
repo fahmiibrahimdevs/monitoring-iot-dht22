@@ -186,6 +186,15 @@ formMqtt.addEventListener('submit', (e) => {
     performConnection(host, port, path, user, pass, ssl);
 });
 
+/* Auto-Switch Port Logic */
+inputMqttSsl.addEventListener('change', () => {
+    if (inputMqttSsl.checked) {
+        inputMqttPort.value = "9443";
+    } else {
+        inputMqttPort.value = "9001";
+    }
+});
+
 function performConnection(host, port, path, user, pass, ssl) {
     // Update Globals
     MQTT_HOST = host;
