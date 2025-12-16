@@ -5,6 +5,7 @@ let MQTT_CLIENT_ID = "web_dashboard_" + Math.floor(Math.random() * 10000);
 let MQTT_USER = "";
 let MQTT_PASS = "";
 let MQTT_SSL = false;
+let MQTT_PATH = "/ws";
 
 const TOPIC_DHT = "smart-iot/monitoring/dht22";
 const TOPIC_CONFIG = "smart-iot/monitoring/config";
@@ -31,6 +32,7 @@ const elMqttModal = document.getElementById("mqtt-modal");
 const formMqtt = document.getElementById("mqtt-form");
 const inputMqttHost = document.getElementById("mqtt-host");
 const inputMqttPort = document.getElementById("mqtt-port");
+const inputMqttPath = document.getElementById("mqtt-path");
 const inputMqttUser = document.getElementById("mqtt-user");
 const inputMqttPass = document.getElementById("mqtt-pass");
 const inputMqttSsl = document.getElementById("mqtt-ssl");
@@ -143,6 +145,7 @@ function checkStoredConfig() {
             const config = JSON.parse(storedConfig);
             if (config.host) inputMqttHost.value = config.host;
             if (config.port) inputMqttPort.value = config.port;
+            if (config.path) inputMqttPath.value = config.path;
             if (config.user) inputMqttUser.value = config.user;
             if (config.pass) inputMqttPass.value = config.pass;
             if (config.ssl) inputMqttSsl.checked = config.ssl;
@@ -162,6 +165,7 @@ formMqtt.addEventListener('submit', (e) => {
     
     const host = inputMqttHost.value.trim();
     const port = Number(inputMqttPort.value);
+    const path = inputMqttPath.value.trim() || "/ws";
     const user = inputMqttUser.value.trim();
     const pass = inputMqttPass.value.trim();
     const ssl = inputMqttSsl.checked;
@@ -173,19 +177,20 @@ formMqtt.addEventListener('submit', (e) => {
     }
 
     if (save) {
-        const config = { host, port, user, pass, ssl };
+        const config = { host, port, path, user, pass, ssl };
         localStorage.setItem('mqtt_config', JSON.stringify(config));
     } else {
         localStorage.removeItem('mqtt_config');
     }
 
-    performConnection(host, port, user, pass, ssl);
+    performConnection(host, port, path, user, pass, ssl);
 });
 
-function performConnection(host, port, user, pass, ssl) {
+function performConnection(host, port, path, user, pass, ssl) {
     // Update Globals
     MQTT_HOST = host;
     MQTT_PORT = port;
+    MQTT_PATH = path;
     MQTT_USER = user;
     MQTT_PASS = pass;
     MQTT_SSL = ssl;
@@ -199,7 +204,7 @@ function performConnection(host, port, user, pass, ssl) {
     // Create new client
     // Note: Paho Client ID must be unique
     MQTT_CLIENT_ID = "web_dashboard_" + Math.floor(Math.random() * 10000);
-    client = new Paho.MQTT.Client(MQTT_HOST, Number(MQTT_PORT), MQTT_CLIENT_ID);
+    client = new Paho.MQTT.Client(MQTT_HOST, Number(MQTT_PORT), MQTT_PATH, MQTT_CLIENT_ID);
 
     client.onConnectionLost = onConnectionLost;
     client.onMessageArrived = onMessageArrived;
