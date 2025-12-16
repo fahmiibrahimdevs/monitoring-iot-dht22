@@ -4,6 +4,7 @@ let MQTT_PORT = 9001;
 let MQTT_CLIENT_ID = "web_dashboard_" + Math.floor(Math.random() * 10000);
 let MQTT_USER = "";
 let MQTT_PASS = "";
+let MQTT_SSL = false;
 
 const TOPIC_DHT = "smart-iot/monitoring/dht22";
 const TOPIC_CONFIG = "smart-iot/monitoring/config";
@@ -32,6 +33,7 @@ const inputMqttHost = document.getElementById("mqtt-host");
 const inputMqttPort = document.getElementById("mqtt-port");
 const inputMqttUser = document.getElementById("mqtt-user");
 const inputMqttPass = document.getElementById("mqtt-pass");
+const inputMqttSsl = document.getElementById("mqtt-ssl");
 const ipnutMqttSave = document.getElementById("mqtt-save");
 
 /* Chart Setup */
@@ -143,6 +145,7 @@ function checkStoredConfig() {
             if (config.port) inputMqttPort.value = config.port;
             if (config.user) inputMqttUser.value = config.user;
             if (config.pass) inputMqttPass.value = config.pass;
+            if (config.ssl) inputMqttSsl.checked = config.ssl;
             ipnutMqttSave.checked = true;
             
             // Optional: Auto-connect if configured
@@ -161,6 +164,7 @@ formMqtt.addEventListener('submit', (e) => {
     const port = Number(inputMqttPort.value);
     const user = inputMqttUser.value.trim();
     const pass = inputMqttPass.value.trim();
+    const ssl = inputMqttSsl.checked;
     const save = ipnutMqttSave.checked;
 
     if (!host || !port) {
@@ -169,21 +173,22 @@ formMqtt.addEventListener('submit', (e) => {
     }
 
     if (save) {
-        const config = { host, port, user, pass };
+        const config = { host, port, user, pass, ssl };
         localStorage.setItem('mqtt_config', JSON.stringify(config));
     } else {
         localStorage.removeItem('mqtt_config');
     }
 
-    performConnection(host, port, user, pass);
+    performConnection(host, port, user, pass, ssl);
 });
 
-function performConnection(host, port, user, pass) {
+function performConnection(host, port, user, pass, ssl) {
     // Update Globals
     MQTT_HOST = host;
     MQTT_PORT = port;
     MQTT_USER = user;
     MQTT_PASS = pass;
+    MQTT_SSL = ssl;
 
     // Dispose old client if exists
     if (client) {
@@ -208,7 +213,7 @@ function connectMQTT() {
     const options = {
         onSuccess: onConnect,
         onFailure: onFailure,
-        useSSL: false, // Usually local broker or non-wss
+        useSSL: MQTT_SSL, 
         keepAliveInterval: 30
     };
 

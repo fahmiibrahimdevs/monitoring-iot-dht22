@@ -229,9 +229,15 @@
                     <input type="password" id="mqtt-pass" class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-blue-500 text-sm" placeholder="Password">
                 </div>
 
-                <div class="flex items-center gap-2 pt-2">
-                    <input type="checkbox" id="mqtt-save" class="w-4 h-4 rounded border-slate-600 bg-slate-700 text-blue-600 focus:ring-offset-slate-900">
-                    <label for="mqtt-save" class="text-sm text-slate-400 select-none">Save Configuration</label>
+                <div class="flex items-center gap-6 pt-2">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="mqtt-ssl" class="w-4 h-4 rounded border-slate-600 bg-slate-700 text-emerald-500 focus:ring-offset-slate-900">
+                        <label for="mqtt-ssl" class="text-sm text-slate-400 select-none">Use SSL/TLS</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="mqtt-save" class="w-4 h-4 rounded border-slate-600 bg-slate-700 text-blue-600 focus:ring-offset-slate-900">
+                        <label for="mqtt-save" class="text-sm text-slate-400 select-none">Save Config</label>
+                    </div>
                 </div>
 
                 <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium py-3 rounded-xl shadow-lg shadow-blue-500/25 transition-all active:scale-[0.98] mt-4">
