@@ -227,7 +227,7 @@ function connectMQTT() {
     const options = {
         onSuccess: onConnect,
         onFailure: onFailure,
-        useSSL: MQTT_SSL, 
+        useSSL: MQTT_SSL,
         keepAliveInterval: 30
     };
 
