@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart IoT Dashboard</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'glass': 'rgba(255, 255, 255, 0.1)',
+                        'glass-border': 'rgba(255, 255, 255, 0.2)',
+                        'neon-blue': '#00f3ff',
+                        'neon-green': '#00ff9d',
+                        'deep-bg': '#0f172a',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-900 text-white font-sans h-screen flex flex-col selection:bg-neon-blue selection:text-slate-900 overflow-hidden">
+
+    <!-- Background Decoration -->
+    <div class="fixed top-0 left-0 w-full h-full -z-10 overflow-hidden pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[120px] animate-pulse"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-500/10 rounded-full blur-[120px] animate-pulse" style="animation-delay: 2s"></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="h-full w-full px-6 py-6 transition-all duration-300 flex flex-col">
+        
+        <!-- Navbar -->
+        <header class="flex justify-between items-center mb-6 glass-panel p-4 rounded-2xl border border-white/5 shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <i class="fa-solid fa-microchip text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Smart IoT</h1>
+                    <p class="text-xs text-slate-400">Monitoring System</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div id="connection-status" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800/50 border border-white/5 text-sm font-medium text-slate-400 transition-all">
+                    <span class="w-2 h-2 rounded-full bg-slate-500 status-dot"></span>
+                    <span class="status-text">Connecting...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Split (Vertical Fill) -->
+        <div class="flex-1 flex flex-col gap-6 min-h-0">
+            
+            <!-- Top Row: KPI Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0">
+                <!-- Temperature Card -->
+                <div class="glass-panel p-6 rounded-3xl border border-white/5 relative overflow-hidden group">
+                    <div class="absolute -right-6 -top-6 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl group-hover:bg-orange-500/20 transition-all"></div>
+                    
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-slate-400 text-sm font-medium mb-1">Temperature</p>
+                            <h2 class="text-4xl font-bold text-white tracking-tight"><span id="val-temp">--.--</span><span class="text-2xl text-slate-500 ml-1">°C</span></h2>
+                        </div>
+                        <div class="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
+                            <i class="fa-solid fa-temperature-high text-orange-400 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="px-3 py-1.5 rounded-lg bg-white/5 inline-block text-xs text-slate-300 border border-white/5">
+                        Updated: <span id="last-update" class="font-mono text-orange-300">--:--:--</span>
+                    </div>
+                </div>
+
+                <!-- Humidity Card -->
+                <div class="glass-panel p-6 rounded-3xl border border-white/5 relative overflow-hidden group">
+                    <div class="absolute -right-6 -top-6 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all"></div>
+                    
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-slate-400 text-sm font-medium mb-1">Humidity</p>
+                            <h2 class="text-4xl font-bold text-white tracking-tight"><span id="val-hum">--.--</span><span class="text-2xl text-slate-500 ml-1">%</span></h2>
+                        </div>
+                        <div class="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                            <i class="fa-solid fa-droplet text-blue-400 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="w-full bg-slate-700/50 h-1.5 rounded-full mt-2 overflow-hidden">
+                        <div id="hum-bar" class="h-full bg-blue-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Relay Status -->
+                <div class="glass-panel p-6 rounded-3xl border border-white/5 relative overflow-hidden group">
+                    <div class="absolute -right-6 -top-6 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all"></div>
+                    
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-slate-400 text-sm font-medium mb-1">Fan Status</p>
+                            <h2 id="val-relay" class="text-4xl font-bold text-white tracking-tight">OFF</h2>
+                        </div>
+                        <div id="relay-icon-bg" class="w-12 h-12 rounded-2xl bg-slate-700/50 flex items-center justify-center border border-white/10 transition-all">
+                            <i id="relay-icon" class="fa-solid fa-fan text-slate-400 text-xl transition-all"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                       <div id="relay-dot" class="w-2.5 h-2.5 rounded-full bg-slate-500 shadow-[0_0_10px_rgba(0,0,0,0)] transition-all"></div>
+                       <span id="relay-text" class="text-xs font-medium text-slate-400">System Idle</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Row: Chart & Config (Fill Remaining) -->
+            <div class="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-0">
+                
+                <!-- Chart Section -->
+                <div class="lg:col-span-2 glass-panel p-6 rounded-3xl border border-white/5 flex flex-col">
+                    <div class="flex justify-between items-center mb-4 shrink-0">
+                        <h3 class="text-lg font-semibold text-white">Real-time History</h3>
+                        <div class="flex gap-2">
+                            <span class="flex items-center gap-1.5 text-xs text-slate-400 px-2 py-1 bg-white/5 rounded-md border border-white/5">
+                                <span class="w-2 h-2 rounded-full bg-orange-400"></span> Temp
+                            </span>
+                            <span class="flex items-center gap-1.5 text-xs text-slate-400 px-2 py-1 bg-white/5 rounded-md border border-white/5">
+                                <span class="w-2 h-2 rounded-full bg-blue-400"></span> Hum
+                            </span>
+                        </div>
+                    </div>
+                    <div class="relative w-full flex-1 min-h-0">
+                        <canvas id="liveChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Configuration Section -->
+                <div class="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col justify-center">
+                    <div class="mb-auto">
+                        <h3 class="text-lg font-semibold text-white mb-1">Threshold Config</h3>
+                        <p class="text-sm text-slate-400 mb-6">Automatically control the relay based on temperature.</p>
+                    </div>
+
+                    <form id="config-form" class="space-y-5">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Turn ON Temperature</label>
+                            <div class="relative">
+                                <input type="number" step="0.1" id="input-temp-on" class="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-mono" placeholder="30.0">
+                                <span class="absolute right-4 top-3 text-slate-500 text-sm">°C</span>
+                            </div>
+                            <p class="text-[10px] text-slate-500 mt-1">Fan starts if temp &ge; this value</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Turn OFF Temperature</label>
+                            <div class="relative">
+                                <input type="number" step="0.1" id="input-temp-off" class="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-mono" placeholder="28.0">
+                                <span class="absolute right-4 top-3 text-slate-500 text-sm">°C</span>
+                            </div>
+                             <p class="text-[10px] text-slate-500 mt-1">Fan stops if temp &le; this value</p>
+                        </div>
+
+                        <div class="pt-2">
+                            <button type="submit" id="btn-save" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium py-3 rounded-xl shadow-lg shadow-blue-500/25 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
+                                <i class="fa-solid fa-save mr-2"></i> Update Thresholds
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="mt-auto pt-4">
+                        <!-- Feedback Toast (Hidden by default) -->
+                         <div id="toast" class="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm text-center opacity-0 transition-opacity duration-300 pointer-events-none">
+                            <i class="fa-solid fa-check-circle mr-1"></i> Configuration sent!
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- MQTT Config Modal -->
+    <div id="mqtt-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-md transition-all duration-300">
+        <div class="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl relative overflow-hidden">
+            <!-- Decoration -->
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500"></div>
+            <div class="absolute -right-10 -top-10 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"></div>
+
+            <h3 class="text-xl font-bold text-white mb-1">MQTT Connection</h3>
+            <p class="text-slate-400 text-sm mb-6">Enter your broker credentials to connect.</p>
+
+            <form id="mqtt-form" class="space-y-4">
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="col-span-2">
+                        <label class="block text-xs font-medium text-slate-400 mb-1.5 uppercase">Host</label>
+                        <input type="text" id="mqtt-host" class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-blue-500 text-sm font-mono" placeholder="xxx.xxx.xxx.xxx" required>
+                    </div>
+                    <div>
+                         <label class="block text-xs font-medium text-slate-400 mb-1.5 uppercase">Port</label>
+                        <input type="number" id="mqtt-port" class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-blue-500 text-sm font-mono" placeholder="9001" required>
+                    </div>
+                </div>
+                
+                <div>
+                     <label class="block text-xs font-medium text-slate-400 mb-1.5 uppercase">Username</label>
+                    <input type="text" id="mqtt-user" class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-blue-500 text-sm" placeholder="Username">
+                </div>
+
+                <div>
+                     <label class="block text-xs font-medium text-slate-400 mb-1.5 uppercase">Password</label>
+                    <input type="password" id="mqtt-pass" class="w-full bg-slate-800/50 border border-white/10 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-blue-500 text-sm" placeholder="Password">
+                </div>
+
+                <div class="flex items-center gap-2 pt-2">
+                    <input type="checkbox" id="mqtt-save" class="w-4 h-4 rounded border-slate-600 bg-slate-700 text-blue-600 focus:ring-offset-slate-900">
+                    <label for="mqtt-save" class="text-sm text-slate-400 select-none">Save Configuration</label>
+                </div>
+
+                <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium py-3 rounded-xl shadow-lg shadow-blue-500/25 transition-all active:scale-[0.98] mt-4">
+                    Connect
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+</body>
+</html>
